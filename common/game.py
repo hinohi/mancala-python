@@ -33,7 +33,7 @@ class MancalaGame:
         ]
         self.side = 0
 
-    def copy(self):
+    def copy(self) -> 'MancalaGame':
         new = self.__new__(self.__class__)
         new.pit_num = self.pit_num
         new.stone_num = self.stone_num
@@ -82,6 +82,9 @@ class MancalaGame:
 
     def pos_candidates(self):
         return [i for i, n in enumerate(self.board[self.side][:-1]) if n > 0]
+
+    def get_points(self):
+        return self.board[0][-1], self.board[1][-1]
 
     @property
     def state(self) -> Result:

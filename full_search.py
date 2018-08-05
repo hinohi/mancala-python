@@ -5,7 +5,7 @@ from typing import List
 from pathlib import Path
 from collections import namedtuple
 
-from game import MancalaGame, Result
+from common.game import MancalaGame, Result
 
 
 SearchResult = namedtuple('SearchResult', ['result', 'record', 'score'])

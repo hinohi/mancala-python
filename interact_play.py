@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from game import MancalaGame, Result, MancalaGameError
+from common.game import MancalaGame, Result, MancalaGameError
 
 
 def interact():
