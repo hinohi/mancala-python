@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from common.game import MancalaGame, Result
 from ai.base import AIBase, OneEvalFuncAIBase
 
@@ -11,7 +10,7 @@ class RandomAI(AIBase):
         return random.choice(g.pos_candidates())
 
 
-class OneTurnAI(OneEvalFuncAIBase):
+class OneTurnGreedyAI(OneEvalFuncAIBase):
 
     def __init__(self, side, eval_func):
         super().__init__(side, eval_func)
@@ -19,9 +18,9 @@ class OneTurnAI(OneEvalFuncAIBase):
     def think(self, g: MancalaGame) -> int:
         from random import choice
 
-        stack = [[g, []]]
         best_pos = []
         best_point = float('-inf')
+        stack = [[g, []]]
         while stack:
             g, pos_list = stack.pop()
             for pos in g.pos_candidates():

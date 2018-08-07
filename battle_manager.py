@@ -32,13 +32,16 @@ class BattleManager:
                 print(f'next: {self.game.side}')
                 print(f'pos: {pos}')
                 print(self.game.purity_dumps())
-        print(self.game.state)
+        p1, p2 = self.game.get_points()
+        print(self.game.state, p1, p2)
         return self.game.state
 
 
 def factory(name, side):
-    from ai.simple import RandomAI, OneTurnAI
+    import re
+    from ai.simple import RandomAI, OneTurnGreedyAI
     from ai.human import HumanAI
+    from ai.deep import SimpleMCMCAI, DepthSearchAI
     from ai.eval_functions import evf_point_diff
 
     if name == 'human':
@@ -46,7 +49,17 @@ def factory(name, side):
     if name == 'random':
         return RandomAI(side)
     if name == 'one':
-        return OneTurnAI(side, evf_point_diff)
+        return OneTurnGreedyAI(side, evf_point_diff)
+    m = re.match(r'mcmc(\d)_(.+)', name)
+    if m:
+        num = int(m.group(1))
+        typ = m.group(2)
+        return SimpleMCMCAI(side, 10 ** num, typ)
+    m = re.match(r'depth(\d)_(.+)', name)
+    if m:
+        depth = int(m.group(1))
+        typ = m.group(2)
+        return DepthSearchAI(side, evf_point_diff, depth, typ)
     raise ValueError(f'unknown: {name}')
 
 
