@@ -1,40 +1,46 @@
 # -*- coding: utf-8 -*-
-from common.game import MancalaGame, Result
-from ai.base import AIBase, OneEvalFuncAIBase
+from common.game import MancalaGame, MancalaGameError
+from ai.base import AIBase, OneEvalFuncAIBase, ChoiceMixin
 
 
 class RandomAI(AIBase):
 
     def think(self, g: MancalaGame):
-        import random
-        return random.choice(g.pos_candidates())
-
-
-class OneTurnGreedyAI(OneEvalFuncAIBase):
-
-    def __init__(self, side, eval_func):
-        super().__init__(side, eval_func)
-
-    def think(self, g: MancalaGame) -> int:
         from random import choice
+        return [choice(g.pos_candidates())]
 
-        best_pos = []
-        best_point = float('-inf')
-        stack = [[g, []]]
-        while stack:
-            g, pos_list = stack.pop()
-            for pos in g.pos_candidates():
-                gg = g.copy()
-                pp = pos_list + [pos]
-                nex = gg.move(pos)
-                if gg.state is Result.IN_BATTLE:
-                    if nex == self.side:
-                        stack.append([gg, pp])
-                        continue
-                point = self.eval_func(self.side, gg)
-                if point > best_point:
-                    best_point = point
-                    best_pos = [pp]
-                elif point == best_point:
-                    best_pos.append(pp)
-        return choice(best_pos)[0]
+
+class ContRandom(AIBase):
+
+    def think(self, g: MancalaGame):
+        from random import choice
+        return choice(list(self.iter_pos(g)))
+
+
+class OneTurnGreedyAI(OneEvalFuncAIBase, ChoiceMixin):
+
+    def think(self, g: MancalaGame):
+        can = {pp: self.eval_func(self.side, gg)
+               for gg, pp in self.iter_pos(g)}
+        return self.choice(can)[1]
+
+
+class HumanAI(AIBase):
+
+    @staticmethod
+    def input_int(prompt):
+        while True:
+            try:
+                return int(input(prompt))
+            except ValueError:
+                pass
+
+    def think(self, g: MancalaGame):
+        while True:
+            pos = self.input_int('pos: ')
+            try:
+                g.copy().move(pos)
+                break
+            except MancalaGameError as e:
+                print(e)
+        return pos

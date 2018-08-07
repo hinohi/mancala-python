@@ -19,19 +19,24 @@ class BattleManager:
             this_side = self.game.side
             assert this_side in [0, 1]
             ai = self.ai_list[this_side]
-            pos = ai.think(self.game.copy())
+            pos_list = ai.think(self.game.copy())
+            assert isinstance(pos_list, (list, tuple)), pos_list
+            assert len(pos_list) >= 1, pos_list
             try:
-                self.game.move(pos)
+                for pos in pos_list:
+                    assert self.game.side == this_side
+                    self.game.move(pos)
+                    if debug:
+                        print()
+                        print(f'next: {self.game.side}')
+                        print(f'pos: {pos}')
+                        print(self.game.purity_dumps())
             except MancalaGameError as e:
                 print(ai, e)
                 if this_side == 0:
                     return Result.WIN_EPI,
                 else:
                     return Result.WIN_PRE
-            if debug:
-                print(f'next: {self.game.side}')
-                print(f'pos: {pos}')
-                print(self.game.purity_dumps())
         p1, p2 = self.game.get_points()
         print(self.game.state, p1, p2)
         return self.game.state
@@ -39,8 +44,7 @@ class BattleManager:
 
 def factory(name, side):
     import re
-    from ai.simple import RandomAI, OneTurnGreedyAI
-    from ai.human import HumanAI
+    from ai.simple import RandomAI, OneTurnGreedyAI, HumanAI
     from ai.deep import SimpleMCMCAI, DepthSearchAI
     from ai.eval_functions import evf_point_diff
 
@@ -59,7 +63,9 @@ def factory(name, side):
     if m:
         depth = int(m.group(1))
         typ = m.group(2)
-        return DepthSearchAI(side, evf_point_diff, depth, typ)
+        ai = DepthSearchAI(side, evf_point_diff, depth)
+        ai.choice_typ = typ
+        return ai
     raise ValueError(f'unknown: {name}')
 
 
