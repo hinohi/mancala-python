@@ -10,7 +10,7 @@ class RandomAI(AIBase):
         return [choice(g.pos_candidates())]
 
 
-class ContRandom(AIBase):
+class RandomGroupAI(AIBase):
 
     def think(self, g: MancalaGame):
         from random import choice

@@ -44,21 +44,18 @@ class BattleManager:
 
 def factory(name, side):
     import re
-    from ai.simple import RandomAI, OneTurnGreedyAI, HumanAI
-    from ai.deep import SimpleMCMCAI, DepthSearchAI
+    from ai.simple import RandomAI, RandomGroupAI, OneTurnGreedyAI, HumanAI
+    from ai.deep import DepthSearchAI
     from ai.eval_functions import evf_point_diff
 
     if name == 'human':
         return HumanAI(side)
     if name == 'random':
         return RandomAI(side)
+    if name == 'random_group':
+        return RandomGroupAI(side)
     if name == 'one':
         return OneTurnGreedyAI(side, evf_point_diff)
-    m = re.match(r'mcmc(\d)_(.+)', name)
-    if m:
-        num = int(m.group(1))
-        typ = m.group(2)
-        return SimpleMCMCAI(side, 10 ** num, typ)
     m = re.match(r'depth(\d)_(.+)', name)
     if m:
         depth = int(m.group(1))
