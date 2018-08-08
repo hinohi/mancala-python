@@ -32,6 +32,7 @@ class MancalaGame:
             [self.stone_num] * self.pit_num + [0],
         ]
         self.side = 0
+        self._state = None
 
     def copy(self) -> 'MancalaGame':
         new = self.__new__(self.__class__)
@@ -39,6 +40,26 @@ class MancalaGame:
         new.stone_num = self.stone_num
         new.board = [self.board[0][:], self.board[1][:]]
         new.side = self.side
+        new._state = None
+        return new
+
+    def to_vec(self):
+        v = [self.pit_num, self.stone_num, self.side]
+        v.extend(self.board[0])
+        v.extend(self.board[1])
+        return v
+
+    @classmethod
+    def from_vec(cls, v) -> 'MancalaGame':
+        new = cls.__new__(cls)
+        new.pit_num = v[0]
+        new.stone_num = v[1]
+        new.side = v[2]
+        new.board = [
+            v[3:3 + new.pit_num],
+            v[3 + new.pit_num:],
+        ]
+        new._state = None
         return new
 
     def _move_stone(self, side: int, pos: int, num: int) -> (int, int):
@@ -55,6 +76,7 @@ class MancalaGame:
             return self._move_stone(1 - side, 0, rest)
 
     def move(self, pos):
+        self._state = None
         side = self.side
 
         if not (0 <= pos < self.pit_num and self.board[side][pos] > 0):
@@ -88,17 +110,23 @@ class MancalaGame:
 
     @property
     def state(self) -> Result:
+        if self._state is not None:
+            return self._state
         rest_pre = sum(self.board[0][:-1])
         rest_epi = sum(self.board[1][:-1])
         if rest_pre == 0 or rest_epi == 0:
             pre = self.board[0][-1]
             epi = self.board[1][-1]
             if pre > epi:
+                self._state = Result.WIN_PRE
                 return Result.WIN_PRE
             elif pre < epi:
+                self._state = Result.WIN_EPI
                 return Result.WIN_EPI
             else:
+                self._state = Result.DRAW
                 return Result.DRAW
+        self._state = Result.IN_BATTLE
         return Result.IN_BATTLE
 
     @property
