@@ -14,7 +14,7 @@ class RandomGroupAI(AIBase):
 
     def think(self, g: MancalaGame):
         from random import choice
-        return choice(list(self.iter_pos(g)))
+        return choice(list(self.iter_pos(g)))[1]
 
 
 class OneTurnGreedyAI(OneEvalFuncAIBase, ChoiceMixin):
