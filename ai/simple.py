@@ -43,4 +43,4 @@ class HumanAI(AIBase):
                 break
             except MancalaGameError as e:
                 print(e)
-        return pos
+        return [pos]

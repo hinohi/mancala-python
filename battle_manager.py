@@ -28,7 +28,7 @@ class BattleManager:
                     self.game.move(pos)
                     if debug:
                         print()
-                        print(f'next: {self.game.side}')
+                        print(f'side: {this_side}')
                         print(f'pos: {pos}')
                         print(self.game.purity_dumps())
             except MancalaGameError as e:
@@ -45,7 +45,7 @@ class BattleManager:
 def factory(name, side):
     import re
     from ai.simple import RandomAI, RandomGroupAI, OneTurnGreedyAI, HumanAI
-    from ai.deep import DepthSearchAI
+    from ai.deep import DepthSearchAI, KDepthSearchAI
     from ai.eval_functions import evf_point_diff
 
     if name == 'human':
@@ -56,12 +56,16 @@ def factory(name, side):
         return RandomGroupAI(side)
     if name == 'one':
         return OneTurnGreedyAI(side, evf_point_diff)
-    m = re.match(r'depth(\d)_(.+)', name)
+    m = re.match(r'^depth(\d)$', name)
     if m:
         depth = int(m.group(1))
-        typ = m.group(2)
         ai = DepthSearchAI(side, evf_point_diff, depth)
-        ai.choice_typ = typ
+        return ai
+    m = re.match(r'^depth(\d+)_k(\d+)$', name)
+    if m:
+        depth = int(m.group(1))
+        k = int(m.group(2))
+        ai = KDepthSearchAI(side, evf_point_diff, depth, k)
         return ai
     raise ValueError(f'unknown: {name}')
 
