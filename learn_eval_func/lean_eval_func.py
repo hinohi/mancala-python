@@ -7,9 +7,16 @@ class Node:
         self.g = g
         self.side = g.side
         self.children = []
-        p0, p1 = self.g.get_points()
-        n = self.g.pit_num * self.g.stone_num * 2
-        self.raw_score = (p0 - p1) / n
+        if g.state is Result.IN_BATTLE:
+            p0, p1 = self.g.get_points()
+            n = self.g.pit_num * self.g.stone_num * 2
+            self.raw_score = (p0 - p1) / n
+        elif g.state is Result.WIN_PRE:
+            self.raw_score = 1.0
+        elif g.state is Result.WIN_EPI:
+            self.raw_score = -1.0
+        else:
+            self.raw_score = 0.0
 
     @staticmethod
     def iter_nex(g: MancalaGame):
