@@ -2,6 +2,7 @@
 __pycache__
 *.py[co]
 .python-version
+.ipynb_checkpoints
 
 # Emacs
 *~
@@ -10,3 +11,9 @@ __pycache__
 
 # PyCharm
 .idea
+
+# macOS
+.DS_store
+
+# data
+learn_eval_func/data/
