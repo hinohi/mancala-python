@@ -103,13 +103,6 @@ class GenData:
         i = 0
         for g in self.iter_g():
             vec = g.to_vec()
-            vec = tuple((
-                vec[2],
-                vec[2 + self.pit] / self.num,
-                vec[4+self.pit*2] / self.num,
-                *vec[2:2+self.pit],
-                *vec[3+self.pit:3+self.pit*2],
-            ))
             if vec in self.mem:
                 continue
             i += 1

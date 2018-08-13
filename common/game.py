@@ -44,20 +44,20 @@ class MancalaGame:
         return new
 
     def to_vec(self):
-        v = [self.pit_num, self.stone_num, self.side]
+        v = [self.side]
         v.extend(self.board[0])
         v.extend(self.board[1])
-        return v
+        return tuple(v)
 
     @classmethod
     def from_vec(cls, v) -> 'MancalaGame':
         new = cls.__new__(cls)
-        new.pit_num = v[0]
-        new.stone_num = v[1]
-        new.side = v[2]
+        new.side = v[0]
+        new.pit_num = (len(v) - 1) // 2 - 1
+        new.stone_num = sum(v[1:]) // (new.pit_num * 2)
         new.board = [
-            v[3:3 + new.pit_num],
-            v[3 + new.pit_num:],
+            v[1:2 + new.pit_num],
+            v[2 + new.pit_num:],
         ]
         new._state = None
         return new
