@@ -42,32 +42,36 @@ class BattleManager:
         return self.game.state
 
 
-def factory(name, side):
-    import re
+def factory(pit: int, stone: int, name: str, side: int):
+    from ai.base import OneEvalFuncAIBase
     from ai.simple import RandomAI, RandomGroupAI, OneTurnGreedyAI, HumanAI
     from ai.deep import DepthSearchAI, KDepthSearchAI
-    from ai.eval_functions import evf_point_diff
+    from ai.eval_functions import evf_factory
 
-    if name == 'human':
-        return HumanAI(side)
-    if name == 'random':
-        return RandomAI(side)
-    if name == 'random_group':
-        return RandomGroupAI(side)
-    if name == 'one':
-        return OneTurnGreedyAI(side, evf_point_diff)
-    m = re.match(r'^depth(\d)$', name)
-    if m:
-        depth = int(m.group(1))
-        ai = DepthSearchAI(side, evf_point_diff, depth)
-        return ai
-    m = re.match(r'^depth(\d+)_k(\d+)$', name)
-    if m:
-        depth = int(m.group(1))
-        k = int(m.group(2))
-        ai = KDepthSearchAI(side, evf_point_diff, depth, k)
-        return ai
-    raise ValueError(f'unknown: {name}')
+    name, *args = name.split('_')
+
+    cls = {
+        'human': HumanAI,
+        'random': RandomAI,
+        'random-group': RandomGroupAI,
+        'one': OneTurnGreedyAI,
+        'depth': DepthSearchAI,
+        'k-depth': KDepthSearchAI,
+    }[name]
+
+    params = {}
+    if issubclass(cls, OneEvalFuncAIBase):
+        params['eval_func'] = evf_factory(pit, stone, 'simple')
+    for arg in args:
+        if arg.startswith('e-'):
+            params['eval_func'] = evf_factory(pit, stone, arg[2:])
+        elif arg.startswith('d-'):
+            params['depth'] = int(arg[2:])
+        elif '-' in arg:
+            key, value = arg.split('-', 1)
+            params[key] = value
+
+    return cls(side, **params)
 
 
 def main():
@@ -81,8 +85,9 @@ def main():
     p.add_argument('--no-debug', action='store_true')
     args = p.parse_args()
 
-    bm = BattleManager(args.pit, args.stone,
-                       factory(args.ai1, 0), factory(args.ai2, 1))
+    ai1 = factory(args.pit, args.stone, args.ai1, 0)
+    ai2 = factory(args.pit, args.stone, args.ai2, 1)
+    bm = BattleManager(args.pit, args.stone, ai1, ai2)
     bm.battle(debug=not args.no_debug)
 
 

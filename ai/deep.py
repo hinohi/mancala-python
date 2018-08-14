@@ -29,7 +29,7 @@ class KDepthSearchAI(OneEvalFuncAIBase, ChoiceMixin):
     def __init__(self, side, eval_func, depth: int, width: int):
         super().__init__(side, eval_func)
         self.depth = depth
-        self.width = width
+        self.width = int(width)
 
     def _search(self, side: int, g: MancalaGame, depth: int):
         from random import shuffle
