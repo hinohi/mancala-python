@@ -1,37 +1,21 @@
 # -*- coding: utf-8 -*-
 from common.game import MancalaGame, Result
+from learn_eval_func.db import session, Board, add_board, add_move
 
 
 class Node:
     def __init__(self, g: MancalaGame):
         self.g = g
+        self.vec = g.to_str()
         self.side = g.side
         self.children = []
+        p0, p1 = self.g.get_points()
+        n = self.g.pit_num * self.g.stone_num * 2
+        self.raw_score = (p0 - p1) / n
         if g.state is Result.IN_BATTLE:
-            p0, p1 = self.g.get_points()
-            n = self.g.pit_num * self.g.stone_num * 2
-            self.raw_score = (p0 - p1) / n
-        elif g.state is Result.WIN_PRE:
-            self.raw_score = 1.0
-        elif g.state is Result.WIN_EPI:
-            self.raw_score = -1.0
+            self.searched = False
         else:
-            self.raw_score = 0.0
-
-    @staticmethod
-    def iter_nex(g: MancalaGame):
-        ini_side = g.side
-        stack = [g]
-        while stack:
-            g = stack.pop()
-            for pos in g.pos_candidates():
-                gg = g.copy()
-                nex = gg.move(pos)
-                if gg.state is Result.IN_BATTLE:
-                    if nex == ini_side:
-                        stack.append(gg)
-                        continue
-                yield gg
+            self.searched = True
 
     @property
     def score(self):
@@ -55,9 +39,26 @@ class Node:
         if self.children:
             for c in self.children:
                 c.grow()
-        elif self.g.state is Result.IN_BATTLE:
-            for gg in self.iter_nex(self.g):
+        elif not self.searched:
+            for gg in self.g.iter_nex():
                 self.children.append(Node(gg))
+            self.searched = True
+        self.g = None
+
+    def collect_board(self):
+        s = {self.vec: (self.score, self.searched)}
+        for c in self.children:
+            ss = c.collect_board()
+            for vec in ss:
+                if ss[vec][1] or vec not in s:
+                    s[vec] = ss[vec]
+        return s
+
+    def collect_move(self):
+        s = {(self.vec, c.vec) for c in self.children}
+        for c in self.children:
+            s = s.union(c.collect_move())
+        return s
 
 
 class GenData:
@@ -67,27 +68,6 @@ class GenData:
         self.stone = stone
         self.score_depth = score_depth
         self.num = pit
-        self.mem = {}
-
-    def dump(self):
-        return {
-            'pit': self.pit,
-            'stone': self.stone,
-            'score_depth': self.score_depth,
-            'data': [
-                {
-                    'v': vec,
-                    's': score,
-                } for vec, score in self.mem.items()
-            ]
-        }
-
-    @classmethod
-    def load(cls, data):
-        new = cls(data['pit'], data['stone'], data['score_depth'])
-        for d in data['data']:
-            new.mem[tuple(d['v'])] = d['s']
-        return new
 
     def iter_g(self):
         from random import choice
@@ -101,50 +81,39 @@ class GenData:
 
     def make(self, n):
         i = 0
+        q = session.query(Board.searched)
         for g in self.iter_g():
-            vec = g.to_vec()
-            if vec in self.mem:
+            vec = g.to_str()
+            searched = q.filter(Board.vec == vec).first()
+            if searched:
                 continue
-            i += 1
             node = Node(g)
-            score = [node.score]
-            for j in range(self.score_depth):
+            for _ in range(self.score_depth):
                 node.grow()
-                score.append(node.score)
-            self.mem[vec] = score
+            boards = node.collect_board()
+            add_board(boards)
+            session.commit()
+            moves = node.collect_move()
+            add_move(moves)
+            session.commit()
+            i += 1
             if i >= n:
                 break
 
 
 def main():
-    import json
     import argparse
-    from pathlib import Path
 
     p = argparse.ArgumentParser()
     p.add_argument('--pit', '-p', type=int, default=6)
-    p.add_argument('--stone', '-s', type=int, default=5)
+    p.add_argument('--stone', '-s', type=int, default=4)
     p.add_argument('--depth', '-d', type=int, default=3)
     p.add_argument('--num', '-n', type=int, default=1000)
-    p.add_argument('--output', '-o', required=True)
-    p.add_argument('--input', '-i')
 
     args = p.parse_args()
 
-    data = None
-    if args.input:
-        inp = Path(args.input)
-        if inp.exists():
-            with inp.open() as f:
-                data = json.load(f)
-    if data:
-        gen = GenData.load(data)
-    else:
-        gen = GenData(args.pit, args.stone, args.depth)
-
+    gen = GenData(args.pit, args.stone, args.depth)
     gen.make(args.num)
-    with Path(args.output).open('w') as f:
-        json.dump(gen.dump(), f, separators=(',', ':'))
 
 
 if __name__ == '__main__':

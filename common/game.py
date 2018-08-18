@@ -49,6 +49,13 @@ class MancalaGame:
         v.extend(self.board[1])
         return tuple(v)
 
+    def to_str(self):
+        return ''.join([
+            str(self.side),
+            *map(lambda c: '%2.2d' % c, self.board[0]),
+            *map(lambda c: '%2.2d' % c, self.board[1]),
+        ])
+
     @classmethod
     def from_vec(cls, v) -> 'MancalaGame':
         new = cls.__new__(cls)
@@ -104,6 +111,25 @@ class MancalaGame:
 
     def pos_candidates(self):
         return [i for i, n in enumerate(self.board[self.side][:-1]) if n > 0]
+
+    def iter_nex(self):
+        ini_side = self.side
+        gone = set()
+        stack = [self]
+        while stack:
+            g = stack.pop()
+            for pos in g.pos_candidates():
+                gg = g.copy()
+                nex = gg.move(pos)
+                if gg.state is Result.IN_BATTLE:
+                    if nex == ini_side:
+                        stack.append(gg)
+                        continue
+                vec = gg.to_vec()
+                if vec in gone:
+                    continue
+                gone.add(vec)
+                yield gg
 
     def get_points(self):
         return self.board[0][-1], self.board[1][-1]
